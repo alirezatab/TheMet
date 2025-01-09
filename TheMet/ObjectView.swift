@@ -43,7 +43,13 @@ struct ObjectView: View {
         .frame(minHeight: 44)
 
       if object.isPublicDomain {
-        PlaceholderView(note: "Display image here")
+        AsyncImage(url: URL(string: object.primaryImageSmall)) { image in
+          image
+            .resizable()
+            .aspectRatio(contentMode: .fit)
+        } placeholder: {
+          PlaceholderView(note: "Display image here")
+        }
       } else {
         PlaceholderView(note: "Image not in public domain.")
       }
