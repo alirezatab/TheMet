@@ -35,46 +35,74 @@ import SwiftUI
 struct ContentView: View {
   
   @StateObject private var store = TheMetStore()
+  @State private var query = "rhino"
+  @State private var showQueryField = false
   
   var body: some View {
     /// Notice `navigationTitle` modifies List, not `NavigationStack`.
     /// A `NavigationStack` can contain alternative root views, each with its own
     /// `.navigationTitle` and `toolbars`.
     NavigationStack {
-      List(store.objects, id: \.objectID) { object in
-        /*
-        if !object.isPublicDomain, let url = URL(string: object.objectURL) {
-          NavigationLink(destination: SafariView(url: url)) {
-            WebIndicatorView(title: object.title)
-          }
-        } else {
-          NavigationLink(object.title) {
-            ObjectView(object: object)
+      VStack {
+        Text("You searched for '\(query)'")
+          .padding(5)
+          .background(Color.metForeground)
+          .cornerRadius(10)
+        List(store.objects, id: \.objectID) { object in
+          /*
+           if !object.isPublicDomain, let url = URL(string: object.objectURL) {
+           NavigationLink(destination: SafariView(url: url)) {
+           WebIndicatorView(title: object.title)
+           }
+           } else {
+           NavigationLink(object.title) {
+           ObjectView(object: object)
+           }
+           }
+           */
+          //        Link(object.title, destination: URL(string: object.objectURL)!)
+          /// You use the `value` initializer for `NavigationLink`, so both label views are in the trailing closures. This version expects you to modify the enclosing `List` with a matching `navigationDestination` for each type of `value`.
+          if !object.isPublicDomain,
+             let url = URL(string: object.objectURL) {
+            NavigationLink(value: url) {
+              WebIndicatorView(title: object.title)
+            }
+            .listRowBackground(Color.metBackground)
+            .foregroundStyle(.white)
+          } else {
+            NavigationLink(value: object) {
+              Text(object.title)
+            }
+            .listRowBackground(Color.metForeground)
           }
         }
-         */
-//        Link(object.title, destination: URL(string: object.objectURL)!)
-        /// You use the `value` initializer for `NavigationLink`, so both label views are in the trailing closures. This version expects you to modify the enclosing `List` with a matching `navigationDestination` for each type of `value`.
-        if !object.isPublicDomain,
-           let url = URL(string: object.objectURL) {
-          NavigationLink(value: url) {
-            WebIndicatorView(title: object.title)
+        .navigationTitle("The Met")
+        .toolbar {
+          Button("Search the Met") {
+            query = ""
+            showQueryField = true
           }
-        } else {
-          NavigationLink(value: object) {
-            Text(object.title)
+          .foregroundStyle(Color.metBackground)
+          .padding(.horizontal)
+          .background(
+            RoundedRectangle(cornerRadius: 8)
+              .stroke(Color.metBackground, lineWidth: 2))
+        }
+        .alert("Search the Met", isPresented: $showQueryField) {
+          TextField("Search the Met", text: $query)
+          Button("Search") {
+            
           }
         }
-      }
-      .navigationTitle("The Met")
-      .navigationDestination(for: URL.self) { url in
-        SafariView(url: url)
-          .navigationBarTitleDisplayMode(.inline)
-          .ignoresSafeArea()
-      }
-      // For public-domain objects or non-public-domain objects without a valid objectURL, NavigationLink passes an object, which matches .navigationDestination(for: Object.self), so the destination is still ObjectView(object: object).
-      .navigationDestination(for: Object.self) { object in
-        ObjectView(object: object)
+        .navigationDestination(for: URL.self) { url in
+          SafariView(url: url)
+            .navigationBarTitleDisplayMode(.inline)
+            .ignoresSafeArea()
+        }
+        // For public-domain objects or non-public-domain objects without a valid objectURL, NavigationLink passes an object, which matches .navigationDestination(for: Object.self), so the destination is still ObjectView(object: object).
+        .navigationDestination(for: Object.self) { object in
+          ObjectView(object: object)
+        }
       }
     }
   }
