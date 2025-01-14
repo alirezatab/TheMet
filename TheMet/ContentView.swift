@@ -37,6 +37,7 @@ struct ContentView: View {
   @StateObject private var store = TheMetStore()
   @State private var query = "rhino"
   @State private var showQueryField = false
+  @State private var fetchObjectsTask: Task<Void, Error>?
   
   var body: some View {
     /// Notice `navigationTitle` modifies List, not `NavigationStack`.
@@ -50,17 +51,18 @@ struct ContentView: View {
           .cornerRadius(10)
         List(store.objects, id: \.objectID) { object in
           /*
-           if !object.isPublicDomain, let url = URL(string: object.objectURL) {
-           NavigationLink(destination: SafariView(url: url)) {
-           WebIndicatorView(title: object.title)
-           }
-           } else {
-           NavigationLink(object.title) {
-           ObjectView(object: object)
-           }
-           }
+          if !object.isPublicDomain, let url = URL(string: object.objectURL) {
+            NavigationLink(destination: SafariView(url: url)) {
+              WebIndicatorView(title: object.title)
+            }
+          } else {
+            NavigationLink(object.title) {
+              ObjectView(object: object)
+            }
+          }
            */
-          //        Link(object.title, destination: URL(string: object.objectURL)!)
+          // Link(object.title, destination: URL(string: object.objectURL)!)
+          
           /// You use the `value` initializer for `NavigationLink`, so both label views are in the trailing closures. This version expects you to modify the enclosing `List` with a matching `navigationDestination` for each type of `value`.
           if !object.isPublicDomain,
              let url = URL(string: object.objectURL) {
@@ -91,7 +93,14 @@ struct ContentView: View {
         .alert("Search the Met", isPresented: $showQueryField) {
           TextField("Search the Met", text: $query)
           Button("Search") {
-            
+            fetchObjectsTask?.cancel()
+            fetchObjectsTask = Task {
+              do {
+                store.objects = []
+                try await store.fetchObjects(for: query)
+                
+              } catch { }
+            }
           }
         }
         .navigationDestination(for: URL.self) { url in
@@ -104,6 +113,18 @@ struct ContentView: View {
           ObjectView(object: object)
         }
       }
+      .overlay {
+        if store.objects.isEmpty {
+          ProgressView()
+        }
+      }
+    }
+    /// When the app starts, `ContentView` appears and this task runs.
+    /// Because it modifies `NavigationStack`, it runs only once, no matter how often you navigate to `ObjectView` and back to `ContentView`.
+    .task {
+      do {
+        try await store.fetchObjects(for: query)
+      } catch {}
     }
   }
 }

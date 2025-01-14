@@ -30,39 +30,14 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 
-/*
- Note: You can annotate a method with @MainActor to ensure it runs on the main thread or annotate a property to ensure it can only be updated from the main thread. Or you can annotate an entire class with @MainActor, if almost all its properties and methods need to be on the main thread, then mark any exceptions with the nonisolated keyword. Learn more about Swift concurrency from our book Modern Concurrency in Swift or video courses Modern Concurrency: Getting Started and Modern Concurrency: Beyond the Basics.
- */
-
 import Foundation
 
-class TheMetStore: ObservableObject {
-  @Published var objects: [Object] = []
-
-  let service = TheMetService()
-  let maxIndex: Int
-  
-  init(_ maxIndex: Int = 30) {
-    self.maxIndex = maxIndex
-    
-    /*
-    #if DEBUG
-    createDevData()
-    #endif
-     */
-  }
-    
-  func fetchObjects(for queryTerm: String) async throws {
-    /// 1 - First, you call `getObjectIDs(from:)` and wait for it to return `objectIDs`.
-    if let objectIDs = try await service.getObjectIDs(from: queryTerm) {
-      /// 2 - Then, you loop over `objectIDs.objectIDs` — at most `maxIndex` of them — calling `getObject(from:)` for each `objectID`. If it returns an `Object`, you append it to your `objects` array.
-      for (index, objectID) in objectIDs.objectIDs.enumerated() where index < maxIndex {
-        if let object = try await service.getObject(from: objectID) {
-          await MainActor.run {
-            objects.append(object)            
-          }
-        }
-      }
-    }
+public extension URLComponents {
+  /// Maps a dictionary into `[URLQueryItem]` then assigns it to the
+  /// `queryItems` property of this `URLComponents` instance.
+  /// From [Alfian Losari's blog.](https://www.alfianlosari.com/posts/building-safe-url-in-swift-using-urlcomponents-and-urlqueryitem/)
+  /// - Parameter parameters: Dictionary of query parameter names and values
+  mutating func setQueryItems(with parameters: [String: String]) {
+    self.queryItems = parameters.map { URLQueryItem(name: $0.key, value: $0.value) }
   }
 }
