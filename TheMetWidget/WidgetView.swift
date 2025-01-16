@@ -1,4 +1,4 @@
-/// Copyright (c) 2023 Kodeco LLC
+/// Copyright (c) 2025 Kodeco LLC
 ///
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
 /// of this software and associated documentation files (the "Software"), to deal
@@ -30,40 +30,41 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 
-import Foundation
+import SwiftUI
+import WidgetKit
 
-struct Object: Codable, Hashable {
-  let objectID: Int
-  let title: String
-  let creditLine: String
-  let objectURL: String
-  let isPublicDomain: Bool
-  let primaryImageSmall: String
-}
-
-struct ObjectIDs: Codable {
-  let total: Int
-  let objectIDs: [Int]
-}
-
-extension Object {
-  static func sample(isPublicDomain: Bool) -> Object {
-    if isPublicDomain {
-      return Object(
-        objectID: 452174,
-        title: "Bahram Gur Slays the Rhino-Wolf",
-        creditLine: "Gift of Arthur A. Houghton Jr., 1970",
-        objectURL: "https://www.metmuseum.org/art/collection/search/452174",
-        isPublicDomain: true,
-        primaryImageSmall: "https://images.metmuseum.org/CRDImages/is/original/DP107178.jpg")
-    } else {
-      return Object(
-        objectID: 828444,
-        title: "Hexagonal flower vase",
-        creditLine: "Gift of Samuel and Gabrielle Lurie, 2019",
-        objectURL: "https://www.metmuseum.org/art/collection/search/828444",
-        isPublicDomain: false,
-        primaryImageSmall: "")
-    }
+struct WidgetView: View {
+  
+  let entry: Provider.Entry
+  
+  var body: some View {
+    Text(entry.object.title)
   }
 }
+
+struct WidgetView_Previews: PreviewProvider {
+  static var previews: some View {
+    //Group {
+      WidgetView(
+        entry: SimpleEntry(
+          date: Date(),
+          object: Object.sample(isPublicDomain: true)))
+      .containerBackground(.fill.tertiary, for: .widget)
+      .previewContext(WidgetPreviewContext(family: .systemLarge))
+//      WidgetView(
+//        entry: SimpleEntry(
+//          date: Date(),
+//          object: Object.sample(isPublicDomain: false)))
+//      .previewContext(WidgetPreviewContext(family: .systemMedium))
+    }
+  //}
+}
+
+//#Preview {
+//  WidgetView(
+//    entry: SimpleEntry(
+//      date: Date(),
+//      object: Object.sample(isPublicDomain: true))
+//  )
+//}
+
