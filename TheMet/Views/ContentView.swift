@@ -34,8 +34,15 @@ import SwiftUI
 
 struct ContentView: View {
   
+  /*
+   Note: If your NavigationStack presents only one type of view, path can be an array of the data type you pass to that view: [Object] for ObjectView or [URL] for SafariView. You’ll still need to use NavigationLink(value:) with the .navigationDestination(for:) modifier.
+   */
+  
+  // for deeplinking
+  @State private var path = NavigationPath()
+  
   @StateObject private var store = TheMetStore()
-  @State private var query = "rhino"
+  @State private var query = "peony"
   @State private var showQueryField = false
   @State private var fetchObjectsTask: Task<Void, Error>?
   
@@ -43,7 +50,7 @@ struct ContentView: View {
     /// Notice `navigationTitle` modifies List, not `NavigationStack`.
     /// A `NavigationStack` can contain alternative root views, each with its own
     /// `.navigationTitle` and `toolbars`.
-    NavigationStack {
+    NavigationStack(path: $path) { // You pass a binding to path to the navigation stack. Now, you can observe the current state of the stack or modify path to specify where to navigate.
       VStack {
         Text("You searched for '\(query)'")
           .padding(5)
@@ -126,25 +133,26 @@ struct ContentView: View {
         try await store.fetchObjects(for: query)
       } catch {}
     }
+    .onOpenURL { url in
+      /// 1 - Extract an `id` value from the widget URL, then find the first `object` whose `objectID` matches this `id` value. Because `url.host` is a `String`, convert the `objectID` value to `String` before comparing.
+      if let id = url.host,
+         let object = store.objects.first(where: { String($0.objectID) == id }) {
+        
+        /// 2 - If the object is in the public domain, append it to `path`. Otherwise, append the `URL` created from its `objectURL`.
+        if object.isPublicDomain {
+          path.append(object)
+        } else {
+          if let url = URL(string: object.objectURL) {
+            path.append(url)
+          }
+        }
+      }
+    }
   }
 }
 
 struct ContentView_Previews: PreviewProvider {
   static var previews: some View {
     ContentView()
-  }
-}
-
-struct WebIndicatorView: View {
-  
-  let title: String
-  
-  var body: some View {
-    HStack {
-      Text(title)
-      Spacer()
-      Image(systemName: "rectangle.portrait.and.arrow.right.fill")
-        .font(.footnote)
-    }
   }
 }

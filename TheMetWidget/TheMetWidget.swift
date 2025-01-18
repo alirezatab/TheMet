@@ -34,6 +34,7 @@ import WidgetKit
 import SwiftUI
 
 struct Provider: TimelineProvider {
+  
   func placeholder(in context: Context) -> SimpleEntry {
     SimpleEntry(date: Date(), object: Object.sample(isPublicDomain: true))
   }
@@ -48,14 +49,40 @@ struct Provider: TimelineProvider {
     
     // Generate a timeline consisting of five entries an hour apart, starting from the current date.
     let currentDate = Date()
-    for hourOffset in 0 ..< 5 {
-      let entryDate = Calendar.current.date(byAdding: .hour, value: hourOffset, to: currentDate)!
-      let entry = SimpleEntry(date: entryDate, object: Object.sample(isPublicDomain: true))
+    
+    /// You read the `objects` array from the app group file and use it instead of `store.objects` to create entries.
+    let objects = readObjects()
+    for index in 0..<objects.count {
+      let entryDate = Calendar.current.date(
+        /// 2 - You change the interval between entries to 3 seconds.
+        byAdding: .hour,
+        value: index,
+        to: currentDate)!
+      /// 3 - You display an object from `store.objects`.
+      let entry = SimpleEntry(
+        date: entryDate,
+        object: objects[index])
       entries.append(entry)
     }
     
     let timeline = Timeline(entries: entries, policy: .atEnd)
     completion(timeline)
+  }
+  
+  /// This reads the `Object` values from the file that `fetchObjects(for:)` saved into the app group’s container.
+  func readObjects() -> [Object] {
+    var objects: [Object] = []
+    let archiveURL = FileManager.sharedContainerURL().appendingPathComponent("objects.json")
+    print(">>> \(archiveURL)")
+    
+    if let codeData = try? Data(contentsOf: archiveURL) {
+      do {
+        objects = try JSONDecoder().decode([Object].self, from: codeData)
+      } catch {
+        print("Error: Can't decode contents")
+      }
+    }
+    return objects
   }
   
   //    func relevances() async -> WidgetRelevances<Void> {
@@ -72,10 +99,7 @@ struct TheMetWidgetEntryView : View {
   var entry: Provider.Entry
   
   var body: some View {
-    VStack {
-      Text("Time:")
-      Text(entry.date, style: .time)
-    }
+    WidgetView(entry: entry)
   }
 }
 
@@ -103,10 +127,11 @@ struct TheMetWidget: Widget {
     /// 4 - In this structure, you only need to customize the name to The Met and the description to View objects from the Metropolitan Museum. Your users will see these in the widget gallery.
     .configurationDisplayName("The Met")
     .description("View objects from the Metropolitan Museum.")
+    .supportedFamilies([.systemMedium, .systemLarge])
   }
 }
 
-#Preview(as: .systemSmall) {
+#Preview(as: .systemMedium) {
   TheMetWidget()
 } timeline: {
   SimpleEntry(date: .now, object: Object.sample(isPublicDomain: true))

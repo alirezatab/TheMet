@@ -30,39 +30,64 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 
-/*
- Note: You can annotate a method with @MainActor to ensure it runs on the main thread or annotate a property to ensure it can only be updated from the main thread. Or you can annotate an entire class with @MainActor, if almost all its properties and methods need to be on the main thread, then mark any exceptions with the nonisolated keyword. Learn more about Swift concurrency from our book Modern Concurrency in Swift or video courses Modern Concurrency: Getting Started and Modern Concurrency: Beyond the Basics.
- */
+import SwiftUI
 
-import Foundation
+struct ObjectView: View {
+  let object: Object
 
-class TheMetStore: ObservableObject {
-  @Published var objects: [Object] = []
-
-  let service = TheMetService()
-  let maxIndex: Int
-  
-  init(_ maxIndex: Int = 30) {
-    self.maxIndex = maxIndex
-    
-    /*
-    #if DEBUG
-    createDevData()
-    #endif
-     */
-  }
-    
-  func fetchObjects(for queryTerm: String) async throws {
-    /// 1 - First, you call `getObjectIDs(from:)` and wait for it to return `objectIDs`.
-    if let objectIDs = try await service.getObjectIDs(from: queryTerm) {
-      /// 2 - Then, you loop over `objectIDs.objectIDs` — at most `maxIndex` of them — calling `getObject(from:)` for each `objectID`. If it returns an `Object`, you append it to your `objects` array.
-      for (index, objectID) in objectIDs.objectIDs.enumerated() where index < maxIndex {
-        if let object = try await service.getObject(from: objectID) {
-          await MainActor.run {
-            objects.append(object)            
-          }
+  var body: some View {
+    VStack {
+      if let url = URL(string: object.objectURL) {
+        Link(destination: url) {
+          WebIndicatorView(title: object.title)
+            .multilineTextAlignment(.leading)
+            .font(.callout)
+            .frame(height: 44)
+            // add these 4 modifiers
+            .padding()
+            .background(Color.metBackground)
+            .foregroundStyle(.white)
+            .cornerRadius(10)
         }
+      } else {
+        Text(object.title)
+          .multilineTextAlignment(.leading)
+          .font(.callout)
+          .frame(minHeight: 44)
       }
+
+      if object.isPublicDomain {
+        AsyncImage(url: URL(string: object.primaryImageSmall)) { image in
+          image
+            .resizable()
+            .aspectRatio(contentMode: .fit)
+        } placeholder: {
+          PlaceholderView(note: "Display image here")
+        }
+      } else {
+        PlaceholderView(note: "Image not in public domain. URL not valid")
+      }
+
+      Text(object.creditLine)
+        .font(.caption)
+        .padding()
+        .background(Color.metForeground)
+        .cornerRadius(10)
     }
+    .padding(.vertical)
+  }
+}
+
+struct ObjectView_Previews: PreviewProvider {
+  static var previews: some View {
+    ObjectView(
+      object:
+        Object(
+          objectID: 452174,
+          title: "Bahram Gur Slays the Rhino-Wolf",
+          creditLine: "Gift of Arthur A. Houghton Jr., 1970",
+          objectURL: "https://www.metmuseum.org/art/collection/search/452174",
+          isPublicDomain: true,
+          primaryImageSmall: "https://images.metmuseum.org/CRDImages/is/original/DP107178.jpg"))
   }
 }

@@ -59,7 +59,7 @@ extension Object {
     } else {
       return Object(
         objectID: 828444,
-        title: "Hexagonal flower vase",
+        title: "\"Bahram Gur Slays the Rhino-Wolf\", Folio 586r from the Shahnama (Book of Kings) of Shah Tahmasp",
         creditLine: "Gift of Samuel and Gabrielle Lurie, 2019",
         objectURL: "https://www.metmuseum.org/art/collection/search/828444",
         isPublicDomain: false,

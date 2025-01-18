@@ -38,26 +38,66 @@ struct WidgetView: View {
   let entry: Provider.Entry
   
   var body: some View {
-    Text(entry.object.title)
+    VStack {
+      /// 1 - You can’t use `NavigationStack` in a widget view, so you create your own title with `headline` font size and `top` padding to push it away from the top edge.
+      Text("The Met")
+        .font(.headline)
+        .padding(.top)
+      /// 2 - You add a divider line, to make it look more like a title.
+      Divider()
+
+      /// 3 - You display the object’s title so it looks similar to how it appears in the app’s list.
+      if !entry.object.isPublicDomain {
+        WebIndicatorView(title: entry.object.title)
+          .padding()
+          .background(Color.metBackground)
+          .foregroundColor(.white)
+      } else {
+        DetailIndicatorView(title: entry.object.title)
+          .padding()
+          .background(Color.metForeground)
+      }
+    }
+    /// 4 - You apply `truncationMode` and `fontWeight` to the `VStack` so it works for both `WebIndicatorView` and `DetailIndicatorView`.
+    .truncationMode(.middle)
+    .fontWeight(.semibold)
+    .widgetURL(URL(string: "themet://\(entry.object.objectID)"))
   }
 }
 
+struct DetailIndicatorView: View {
+  let title: String
+
+  var body: some View {
+    HStack(alignment: .firstTextBaseline) {
+      Text(title)
+      Spacer()
+      Image(systemName: "doc.text.image.fill")
+    }
+  }
+}
+
+
 struct WidgetView_Previews: PreviewProvider {
   static var previews: some View {
-    //Group {
+    Group {
       WidgetView(
         entry: SimpleEntry(
           date: Date(),
           object: Object.sample(isPublicDomain: true)))
       .containerBackground(.fill.tertiary, for: .widget)
       .previewContext(WidgetPreviewContext(family: .systemLarge))
-//      WidgetView(
-//        entry: SimpleEntry(
-//          date: Date(),
-//          object: Object.sample(isPublicDomain: false)))
-//      .previewContext(WidgetPreviewContext(family: .systemMedium))
+      
+      // non-public-domain sample object
+      
+      WidgetView(
+        entry: SimpleEntry(
+          date: Date(),
+          object: Object.sample(isPublicDomain: false)))
+      .containerBackground(.fill.tertiary, for: .widget)
+      .previewContext(WidgetPreviewContext(family: .systemMedium))
     }
-  //}
+  }
 }
 
 //#Preview {
